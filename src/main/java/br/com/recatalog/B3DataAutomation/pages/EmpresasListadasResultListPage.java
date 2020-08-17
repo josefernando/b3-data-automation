@@ -1,5 +1,7 @@
 package br.com.recatalog.B3DataAutomation.pages;
 
+import java.util.List;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
@@ -15,5 +17,9 @@ public class EmpresasListadasResultListPage extends BasePage{
 		WebElement  v = driver.findElement(By.xpath("//span[@class='label'][contains(text(),'Resultados da Busca')]"));
 		return v != null;
 	}
-
+	
+	public List<WebElement> getLinksToDadosDaCompahia(){
+//		WebDriver iFrameDriver = Util.switchTo(driver, "bvmf_iframe");
+		return  driver.findElements(By.cssSelector("tr.GridRow_SiteBmfBovespa td > a"));
+	}
 }

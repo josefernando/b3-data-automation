@@ -23,8 +23,13 @@ public class EmpresasListadasResultListPageTest {
 		Assert.assertTrue(empresasListadasResultListPage.validatePage());
 	}
 	
-//	@AfterMethod
-//	public void exit() {
-//		empresasListadasResultListPage.driver.quit();
-//	}
+	@Test(priority = 2)
+	public void linksToDadosDaCompahiaTest() {
+		Assert.assertTrue(empresasListadasResultListPage.getLinksToDadosDaCompahia().size() > 0);
+	}
+	
+	@AfterMethod
+	public void exit() {
+		empresasListadasResultListPage.driver.quit();
+	}
 }
