@@ -5,7 +5,6 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-
 public class HomePageTest {
 	
 	HomePage homepage;
@@ -16,10 +15,14 @@ public class HomePageTest {
 		homepage.initialization("CHROME", "http://www.b3.com.br");
 	}
 	
-	@Test
+	@Test(priority = 1)
+	public void HomePageTitleTest() {
+		Assert.assertTrue(homepage.validatePageTitle());
+	}
+	
+	@Test(priority = 2)
 	public void HomePageLogoTest() {
-		System.out.println(homepage.validateB3Logo());
-		Assert.assertTrue(true);
+		Assert.assertTrue(homepage.validateB3Logo());
 	}
 	
 	@AfterMethod
