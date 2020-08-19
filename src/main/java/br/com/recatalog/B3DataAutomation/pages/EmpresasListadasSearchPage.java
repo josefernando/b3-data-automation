@@ -18,6 +18,7 @@ public class EmpresasListadasSearchPage extends BasePage {
 	}
 	
 	public EmpresasListadasResultListPage clickOnTodasBtn() {
+		driver.switchTo().defaultContent(); //new
 		driver.switchTo().frame("bvmf_iframe");
 		WebElement todasBtn = driver.findElement(By.xpath("//input[@type='button'][@value='Todas']"));
 		todasBtn.click();
