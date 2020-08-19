@@ -38,8 +38,6 @@ public class ResumoEmpresaPageTest {
 	@Test(priority = 3)
 	public void clickOnVoltarTest() {
 		 resumoEmpresaPage.clickOnVoltar();
-//		EmpresasListadasSearchPage empresasListadasSearchPage = resumoEmpresaPage.clickOnVoltar();
-//		Assert.assertTrue(empresasListadasSearchPage.validatePage());
 	}
 	
 	@AfterMethod

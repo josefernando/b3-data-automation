@@ -12,7 +12,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 
 public class BasePage {
 	
-	public static WebDriver driver;
+	public static WebDriver driver; 
 	public static Properties prop;
 	
 	public BasePage() {
@@ -28,9 +28,14 @@ public class BasePage {
 		}
 	}
 	
+	public void initialization() {
+		initialization("CHROME","http://www.b3.com.br");
+	}
+	
 	public void initialization(String browserName, String url) {
 		if(browserName.equalsIgnoreCase("CHROME")) {
-			System.setProperty("webdriver.chrome.driver", System.getProperty("user.dir") + prop.getProperty("driver.chrome"));
+//			System.setProperty("webdriver.chrome.driver", System.getProperty("user.dir") + prop.getProperty("driver.chrome"));
+			System.setProperty("webdriver.chrome.driver", ".\\drivers\\chromedriver.exe");
 			driver = new ChromeDriver();
 		} 
 		else if(browserName.equalsIgnoreCase("FIREFOX")) {

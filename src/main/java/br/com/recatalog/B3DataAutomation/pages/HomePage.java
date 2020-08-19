@@ -12,7 +12,6 @@ public class HomePage extends BasePage {
 	
 	public HomePage() {
 		super();
-//		findElements();
 	}
 
 	public String getPageTitle() {
@@ -25,7 +24,8 @@ public class HomePage extends BasePage {
 
 	public Boolean validateB3Logo() {
 		b3Logo = driver.findElement(By.cssSelector("img[src*='logo-b3.png']"));
-		return b3Logo.isDisplayed();
+		boolean isDisplayed = b3Logo.isDisplayed();
+		return isDisplayed;
 	}
 	
 	public EmpresasListadasSearchPage goEmpresasListadasSearchPage() {
