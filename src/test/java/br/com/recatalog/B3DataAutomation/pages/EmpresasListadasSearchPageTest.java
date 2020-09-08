@@ -22,11 +22,11 @@ public class EmpresasListadasSearchPageTest {
 		Assert.assertTrue(empresasListadasSearchPage.validatePage());
 	}
 	
-	@Test(priority = 2)
-	public void clickOnTodasBtnTest() {
-		empresasListadasResultListPage = empresasListadasSearchPage.clickOnTodasBtn();
-		Assert.assertTrue(empresasListadasResultListPage.validatePage());
-	}
+//	@Test(priority = 2)
+//	public void clickOnTodasBtnTest() {
+//		empresasListadasResultListPage = empresasListadasSearchPage.clickOnTodasBtn();
+//		Assert.assertTrue(empresasListadasResultListPage.validatePage());
+//	}
 	
 	@AfterMethod
 	public void exit() {

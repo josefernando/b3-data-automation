@@ -1,48 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testng-results ignored="0" total="3" passed="3" failed="0" skipped="0">
+<testng-results ignored="0" total="1" passed="1" failed="0" skipped="0">
   <reporter-output>
   </reporter-output>
-  <suite started-at="2020-08-18T19:43:09 BRT" name="Suite" finished-at="2020-08-18T19:45:05 BRT" duration-ms="115502">
+  <suite started-at="2020-09-07T12:13:43 BRT" name="Suite" finished-at="2020-09-07T12:13:43 BRT" duration-ms="61">
     <groups>
     </groups>
-    <test started-at="2020-08-18T19:43:09 BRT" name="Test" finished-at="2020-08-18T19:45:05 BRT" duration-ms="115502">
+    <test started-at="2020-09-07T12:13:43 BRT" name="Test" finished-at="2020-09-07T12:13:43 BRT" duration-ms="61">
       <class name="br.com.recatalog.B3DataAutomation.pages.ResumoEmpresaPageTest">
-        <test-method is-config="true" signature="setup()[pri:0, instance:br.com.recatalog.B3DataAutomation.pages.ResumoEmpresaPageTest@43301423]" started-at="2020-08-18T19:43:09 BRT" name="setup" finished-at="2020-08-18T19:43:40 BRT" duration-ms="31316" status="PASS">
+        <test-method signature="testOk()[pri:0, instance:br.com.recatalog.B3DataAutomation.pages.ResumoEmpresaPageTest@15b204a1]" started-at="2020-09-07T12:13:43 BRT" name="testOk" finished-at="2020-09-07T12:13:43 BRT" duration-ms="14" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- setup -->
-        <test-method signature="validatePageTest()[pri:1, instance:br.com.recatalog.B3DataAutomation.pages.ResumoEmpresaPageTest@43301423]" started-at="2020-08-18T19:43:40 BRT" name="validatePageTest" finished-at="2020-08-18T19:43:51 BRT" duration-ms="10109" status="PASS">
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- validatePageTest -->
-        <test-method is-config="true" signature="exit()[pri:0, instance:br.com.recatalog.B3DataAutomation.pages.ResumoEmpresaPageTest@43301423]" started-at="2020-08-18T19:43:51 BRT" name="exit" finished-at="2020-08-18T19:43:52 BRT" duration-ms="1577" status="PASS">
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- exit -->
-        <test-method is-config="true" signature="setup()[pri:0, instance:br.com.recatalog.B3DataAutomation.pages.ResumoEmpresaPageTest@43301423]" started-at="2020-08-18T19:43:52 BRT" name="setup" finished-at="2020-08-18T19:44:22 BRT" duration-ms="30059" status="PASS">
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- setup -->
-        <test-method signature="stockCodeTest()[pri:2, instance:br.com.recatalog.B3DataAutomation.pages.ResumoEmpresaPageTest@43301423]" started-at="2020-08-18T19:44:22 BRT" name="stockCodeTest" finished-at="2020-08-18T19:44:32 BRT" duration-ms="10140" status="PASS">
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- stockCodeTest -->
-        <test-method is-config="true" signature="exit()[pri:0, instance:br.com.recatalog.B3DataAutomation.pages.ResumoEmpresaPageTest@43301423]" started-at="2020-08-18T19:44:32 BRT" name="exit" finished-at="2020-08-18T19:44:33 BRT" duration-ms="826" status="PASS">
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- exit -->
-        <test-method is-config="true" signature="setup()[pri:0, instance:br.com.recatalog.B3DataAutomation.pages.ResumoEmpresaPageTest@43301423]" started-at="2020-08-18T19:44:33 BRT" name="setup" finished-at="2020-08-18T19:45:04 BRT" duration-ms="30438" status="PASS">
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- setup -->
-        <test-method signature="clickOnVoltarTest()[pri:3, instance:br.com.recatalog.B3DataAutomation.pages.ResumoEmpresaPageTest@43301423]" started-at="2020-08-18T19:45:04 BRT" name="clickOnVoltarTest" finished-at="2020-08-18T19:45:04 BRT" duration-ms="120" status="PASS">
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- clickOnVoltarTest -->
-        <test-method is-config="true" signature="exit()[pri:0, instance:br.com.recatalog.B3DataAutomation.pages.ResumoEmpresaPageTest@43301423]" started-at="2020-08-18T19:45:04 BRT" name="exit" finished-at="2020-08-18T19:45:05 BRT" duration-ms="871" status="PASS">
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- exit -->
+        </test-method> <!-- testOk -->
       </class> <!-- br.com.recatalog.B3DataAutomation.pages.ResumoEmpresaPageTest -->
     </test> <!-- Test -->
   </suite> <!-- Suite -->

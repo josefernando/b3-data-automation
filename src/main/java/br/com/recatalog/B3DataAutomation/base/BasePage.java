@@ -6,9 +6,12 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+import org.openqa.selenium.UnexpectedAlertBehaviour;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.remote.CapabilityType;
 
 public class BasePage {
 	
@@ -33,14 +36,21 @@ public class BasePage {
 	}
 	
 	public void initialization(String browserName, String url) {
+		
+		ChromeOptions options = new ChromeOptions();
+
+		// aceita os popups e alerts = ACCEPT
+		options.setCapability(CapabilityType.UNEXPECTED_ALERT_BEHAVIOUR, UnexpectedAlertBehaviour.ACCEPT);
+
+//		ChromeDriver driver = new ChromeDriver(options);
+		
 		if(browserName.equalsIgnoreCase("CHROME")) {
-//			System.setProperty("webdriver.chrome.driver", System.getProperty("user.dir") + prop.getProperty("driver.chrome"));
 			System.setProperty("webdriver.chrome.driver", ".\\drivers\\chromedriver.exe");
-			driver = new ChromeDriver();
+			driver = new ChromeDriver(options);
 		} 
 		else if(browserName.equalsIgnoreCase("FIREFOX")) {
 			System.setProperty("webdriver.gecko.driver", System.getProperty("user.dir") + prop.getProperty("driver.firefox"));
-			driver = new FirefoxDriver();
+			driver = new FirefoxDriver(options);
 		}
 		
 		driver.manage().window().maximize();
