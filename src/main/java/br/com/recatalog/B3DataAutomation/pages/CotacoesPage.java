@@ -58,6 +58,12 @@ public class CotacoesPage extends BasePage {
 			}
 		}
 		
+		try {
+			Thread.sleep(30000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
 		driver.close();
 		driver.quit();
 	}
@@ -67,7 +73,7 @@ public class CotacoesPage extends BasePage {
 		CotacoesPage cot = new CotacoesPage();
 		cot.initialization("CHROME", "http://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/cotacoes/cotacoes");
 		System.out.println(cot.validatePage());
-		List<String> codes = Arrays.asList("VVAR3","abc","PETR4");
+		List<String> codes = Arrays.asList("PETR4","VVAR3");
 		cot.downloadNegociosByStockUntilNow(codes, "04/09/2020");
 	}
 }

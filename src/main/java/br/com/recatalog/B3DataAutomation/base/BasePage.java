@@ -3,6 +3,8 @@ package br.com.recatalog.B3DataAutomation.base;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -41,8 +43,12 @@ public class BasePage {
 
 		// aceita os popups e alerts = ACCEPT
 		options.setCapability(CapabilityType.UNEXPECTED_ALERT_BEHAVIOUR, UnexpectedAlertBehaviour.ACCEPT);
+		
+		Map<String, Object> prefs = new HashMap<String, Object>();
+		prefs.put("download.default_directory", prop.getProperty("download.dir"));
+		prefs.put("profile.default_content_setting_values.automatic_downloads", 1);
 
-//		ChromeDriver driver = new ChromeDriver(options);
+		options.setExperimentalOption("prefs", prefs);
 		
 		if(browserName.equalsIgnoreCase("CHROME")) {
 			System.setProperty("webdriver.chrome.driver", ".\\drivers\\chromedriver.exe");
