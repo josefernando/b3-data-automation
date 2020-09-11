@@ -3,6 +3,8 @@ package br.com.recatalog.B3DataAutomation.base;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -20,6 +22,7 @@ public class BasePage {
 	
 	public static WebDriver driver; 
 	public static Properties prop; 
+	public String downloadDir; 
 	
 	public BasePage() {
 		prop = new Properties();
@@ -44,11 +47,18 @@ public class BasePage {
 		
 		if(browserName.equalsIgnoreCase("CHROME")) {
 			ChromeOptions options = new ChromeOptions();
+			
+			String pattern = "yyyMMdd_HHmmss";
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+			String date = simpleDateFormat.format(new Date());
+			System.out.println(date);
 
 			// aceita os popups e alerts = ACCEPT
 			options.setCapability(CapabilityType.UNEXPECTED_ALERT_BEHAVIOUR, UnexpectedAlertBehaviour.ACCEPT);
 			Map<String, Object> prefs = new HashMap<String, Object>();
-			prefs.put("download.default_directory", prop.getProperty("download.dir"));
+			
+			downloadDir = prop.getProperty("download.dir") + "\\" + date;
+			prefs.put("download.default_directory", downloadDir);
 
 			// inibe popup perguntando se permite download de múltiplos arquivos
 			prefs.put("profile.default_content_setting_values.automatic_downloads", 1);
