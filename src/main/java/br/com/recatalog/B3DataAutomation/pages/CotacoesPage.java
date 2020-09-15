@@ -9,8 +9,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -32,6 +36,7 @@ import com.profesorfalken.jpowershell.PowerShellResponse;
 
 import br.com.recatalog.B3DataAutomation.base.BasePage;
 import br.com.recatalog.B3DataAutomation.util.PreparaLoadIntradayTrade;
+import br.com.recatalog.B3DataAutomation.util.Util;
 
 public class CotacoesPage extends BasePage {
 	
@@ -45,13 +50,14 @@ public class CotacoesPage extends BasePage {
 		return v != null;
 	}
 	
-	
 	public List<String> listaDir() {
         PowerShell powerShell = PowerShell.openSession();
 		String command = "Get-ChildItem '" + downloadDir + "' -Filter *.LOAD | select -expand fullname";
 		
         PowerShellResponse response = powerShell.executeCommand(command);
-        String[] files = response.getCommandOutput().split(System.getProperty("line.separator"));
+        String outpp = response.getCommandOutput();
+        
+        String[] files = outpp.split(System.getProperty("line.separator"));
         
 //        for(String a : files) {
 //        	System.out.println(a);
@@ -104,7 +110,7 @@ public class CotacoesPage extends BasePage {
 		}
 
 		writer.flush();
-		System.out.println(file.getAbsolutePath() + "- linhas: " + count);
+		System.out.println(file.getAbsolutePath() + " - linhas: " + count);
 		
 		sc.close();
 		} 
@@ -117,11 +123,40 @@ public class CotacoesPage extends BasePage {
 		}
 	}
 	
+	public void findOportunity(List<String> stockCodes, String data, int interval) {
+		
+		Connection conn = Util.getMySqlConnection();
+		// (stock_code varchar(12), start_date varchar(10), pinterval int, OUT error_code int, OUT error_msg varchar(255))
+		String procedureCall = "{CALL FIND_OPORTUNITY_INTRADAY_BY_STOCK(?,?,?,?,?)}";
+		for(String scode : stockCodes) {
+			try {
+				CallableStatement stmt = conn.prepareCall(procedureCall);
+		         stmt.setString(1, scode);  
+		         stmt.setString(2, data);  
+		         stmt.setInt(3, interval);  
+		         stmt.registerOutParameter(4, Types.INTEGER);
+		         stmt.registerOutParameter(5, Types.VARCHAR);
+		         
+		         //Execute stored procedure
+		         stmt.execute();
+		         
+		         // Get Out and InOut parameters
+		         System.out.println("Code: " + scode);
+		         System.out.println("Error Code: "  + stmt.getInt(4));
+		         System.out.println("Error Msg: "  + stmt.getString(5));			
+		         System.out.println("===========================");			
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	public void downloadNegociosByStockUntilNow(List<String> stockCodes, String data) {
 		driver.switchTo().defaultContent(); //new
 		driver.switchTo().frame("bvmf_iframe");
 		
-		driver.manage().timeouts().implicitlyWait(20, TimeUnit.SECONDS);
+		driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
 		
 		WebElement dataEl = driver.findElement(By.xpath("//div[@class='DayPickerInput']/input"));
 		dataEl.sendKeys(Keys.CONTROL + "a");
@@ -137,6 +172,8 @@ public class CotacoesPage extends BasePage {
 		
 		for(String code : stockCodes) {
 	        JavascriptExecutor js = (JavascriptExecutor) driver;
+	        
+	        Instant previousCode = Instant.now();
 	        
 			stockCodeEl = driver.findElement(By.cssSelector("input[type='text']"));
 			previous = Instant.now();
@@ -159,7 +196,7 @@ public class CotacoesPage extends BasePage {
 				String var = "//a[contains(@href,'" + code + "')]";
 				List<WebElement> ativoPesquisadoLinks = driver.findElements(By.xpath(var));
 				if(ativoPesquisadoLinks.isEmpty()) {
-					System.out.println("Sem processamento até o momento: " + code  );
+					System.out.println("Sem processamento até o momento: " + code + " " + Duration.between(previousCode,Instant.now()).getSeconds() + " seconds" );
 					continue;
 				}
 				
@@ -196,15 +233,17 @@ public class CotacoesPage extends BasePage {
 				e.printStackTrace();
 				continue;
 			}
-			System.out.println("Code : " + code + " " + ChronoUnit.MILLIS.between(previous,Instant.now()));
+			System.out.println("Code : " + code + " - " + Duration.between(previousCode,Instant.now()).toSeconds() + "." + Duration.between(previousCode,Instant.now()).toNanosPart());
 		}
 		
 //		driver.close();
 //		driver.quit();
 	}
 
-	
 	public static void main (String[] args) {
+		
+		Instant start = Instant.now();
+		
 		CotacoesPage cot = new CotacoesPage();
 		cot.initialization("CHROME", "http://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/cotacoes/cotacoes");
 		List<String> codes = Arrays.asList(
@@ -1025,7 +1064,7 @@ public class CotacoesPage extends BasePage {
 				"VALE3",
 				"VLID3",
 				"VVAR3",
-				"VIVA3",
+				"VIVA3", 
 				"VIVR3",
 				"VULC3",
 				"WEGE3",
@@ -1037,9 +1076,31 @@ public class CotacoesPage extends BasePage {
 				"WLMM4",
 				"YDUQ3"
 				);
-		cot.downloadNegociosByStockUntilNow(codes, "10/09/2020");
+		cot.downloadNegociosByStockUntilNow(codes, "15/09/2020");
 		cot.unzipFolder();
 		cot.preparaLoad();
-		cot.listaDir();
+		
+		Connection conn = Util.getMySqlConnection();
+		
+		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+		
+		Util.truncateMySql("tb_intraday_trade_daily", conn);
+		
+		for(String f : cot.listaDir()) {
+			Util.LoadDataInFileMySql(f, conn);
+			System.out.println(f);
+		}
+		try {
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+
+		cot.findOportunity(codes, "20200915", 15);
+		
+		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+
 	}
 }
