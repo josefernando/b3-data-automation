@@ -13,9 +13,12 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +43,15 @@ import br.com.recatalog.B3DataAutomation.util.Util;
 
 public class CotacoesPage extends BasePage {
 	
+	String dateIn;  // yyyymmdd
+	List<String> stockCodes;
+	
+	public CotacoesPage(List<String> stockCodes , String dateIn) {
+		super();
+		this.dateIn = dateIn;
+		this.stockCodes = stockCodes;
+	}
+	
 	public CotacoesPage() {
 		super();
 	}
@@ -53,7 +65,8 @@ public class CotacoesPage extends BasePage {
 	public List<String> listaDir() {
         PowerShell powerShell = PowerShell.openSession();
 		String command = "Get-ChildItem '" + downloadDir + "' -Filter *.LOAD | select -expand fullname";
-		
+//		String command = "Get-ChildItem '" + "C:\\Download\\Bolsa_de_Valores_Dados\\b3_dados\\intraday\\20200917_084611" + "' -Filter *.LOAD | select -expand fullname";
+        	
         PowerShellResponse response = powerShell.executeCommand(command);
         String outpp = response.getCommandOutput();
         
@@ -123,7 +136,7 @@ public class CotacoesPage extends BasePage {
 		}
 	}
 	
-	public void findOportunity(List<String> stockCodes, String data, int interval) {
+	public void findOportunity(int interval) {
 		
 		Connection conn = Util.getMySqlConnection();
 		// (stock_code varchar(12), start_date varchar(10), pinterval int, OUT error_code int, OUT error_msg varchar(255))
@@ -132,7 +145,7 @@ public class CotacoesPage extends BasePage {
 			try {
 				CallableStatement stmt = conn.prepareCall(procedureCall);
 		         stmt.setString(1, scode);  
-		         stmt.setString(2, data);  
+		         stmt.setString(2, dateIn);  
 		         stmt.setInt(3, interval);  
 		         stmt.registerOutParameter(4, Types.INTEGER);
 		         stmt.registerOutParameter(5, Types.VARCHAR);
@@ -152,11 +165,28 @@ public class CotacoesPage extends BasePage {
 		}
 	}
 	
-	public void downloadNegociosByStockUntilNow(List<String> stockCodes, String data) {
+	public void downloadNegociosByStockUntilNow() {
+		
+		if(stockCodes == null) {
+			System.out.println("Será utilizado o último arquivo de cotações gerado do dia");
+		}
+		
+		SimpleDateFormat dateFormatIn = new SimpleDateFormat("yyyyMMdd"); 
+		SimpleDateFormat dateFormatOut = new SimpleDateFormat("dd/MM/yyyy"); 
+
+		Date date = null;
+		try {
+			date = dateFormatIn.parse(dateIn);
+		} catch (ParseException e1) {
+			e1.printStackTrace();
+		}
+		
+		String data = dateFormatOut.format(date);
+		
 		driver.switchTo().defaultContent(); //new
 		driver.switchTo().frame("bvmf_iframe");
 		
-		driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+		driver.manage().timeouts().implicitlyWait(7, TimeUnit.SECONDS);
 		
 		WebElement dataEl = driver.findElement(By.xpath("//div[@class='DayPickerInput']/input"));
 		dataEl.sendKeys(Keys.CONTROL + "a");
@@ -183,56 +213,49 @@ public class CotacoesPage extends BasePage {
 			stockCodeEl.sendKeys(Keys.ENTER);
 
 			WebDriverWait wait0 = new WebDriverWait(driver, 10);
-			
-//			wait0.until(ExpectedConditions.invisibilityOfElementLocated(By.xpath("//div[@class='modal-body']")));
-//			wait0.until(ExpectedConditions.invisibilityOfElementLocated(By.xpath("//a[@data-dropdown='Section-2']")));
-//			wait0.until(ExpectedConditions.visibilityOf(pesquisarBtn));
+
 			wait0.ignoring(StaleElementReferenceException.class)
 			.until(ExpectedConditions.elementToBeClickable(By.xpath("//input[@type='submit' and @class='button expand']")));
-				pesquisarBtn = driver.findElement(By.xpath("//input[@type='submit' and @class='button expand']"));
+			
+			pesquisarBtn = driver.findElement(By.xpath("//input[@type='submit' and @class='button expand']"));
 
-				js.executeScript("arguments[0].click()", pesquisarBtn);
+			js.executeScript("arguments[0].click()", pesquisarBtn);
+			
+			WebDriverWait wait = new WebDriverWait(driver, 7);
+			
+			WebElement el = wait.ignoring(StaleElementReferenceException.class)
+					.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//h3[@id='label-nao-encontrado'] | //a[contains(text(),'Ativo pesquisado')])")));
+
 			try {
-				String var = "//a[contains(@href,'" + code + "')]";
-				List<WebElement> ativoPesquisadoLinks = driver.findElements(By.xpath(var));
-				if(ativoPesquisadoLinks.isEmpty()) {
+				if(el.getTagName().equalsIgnoreCase("h3")) {
 					System.out.println("Sem processamento até o momento: " + code + " " + Duration.between(previousCode,Instant.now()).getSeconds() + " seconds" );
 					continue;
 				}
-				
-//				List<WebElement> ativoPesquisadoLinks = driver.findElements(By.xpath("(//a[contains(text(),'Ativo pesquisado')] | //h3[@id='label-nao-encontrado'])") );
-//				if(!ativoPesquisadoLinks.isEmpty()) {
-////					System.out.println(ativoPesquisadoLinks.get(0).getTagName());
-//					if(ativoPesquisadoLinks.get(0).getTagName().equalsIgnoreCase("a")) 
-//						ativoPesquisadoLink = ativoPesquisadoLinks.get(0);
-//					else {
-//						System.out.println("Sem processamento para a ação: " + code);
-//						continue;
-//					}
-//				}
-				
-//				ativoPesquisadoLink = driver.findElement(By.xpath(var));
-				ativoPesquisadoLink = ativoPesquisadoLinks.get(0);
- 
-//				WebDriverWait wait = new WebDriverWait(driver, 10);
-//				wait.until(ExpectedConditions.elementToBeClickable(By.xpath(var)));
-				ativoPesquisadoLink.click();
-			} catch(NoSuchElementException e) {
-				System.out.println("Erro: Sem processamento para a ação: " + code  );
-				continue;
-			} 
-			/*
-			 * catch(StaleElementReferenceException e) {
-			 * System.out.println("Erro: StaleElementReferenceException: " + code );
-			 * continue; }
-			 */ catch(TimeoutException e) {
-				System.err.println("TimeoutException ");
-				e.printStackTrace();
-				break;
-			}catch (ElementClickInterceptedException e) {
-				e.printStackTrace();
+			} catch (StaleElementReferenceException e0) {
+				System.out.println("Sem processamento até o momento (StaleElementReferenceException) : " + code + " " + Duration.between(previousCode,Instant.now()).getSeconds() + " seconds" );
+				continue;				
+			}
+			
+			try {
+			ativoPesquisadoLink = wait.ignoring(StaleElementReferenceException.class, NoSuchElementException.class)
+					.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[contains(text(),'Ativo pesquisado')]")));
+			} catch (TimeoutException e) {
+				System.out.println("Timeout: " + code + " " + Duration.between(previousCode,Instant.now()).getSeconds() + " seconds" );
 				continue;
 			}
+			
+			ativoPesquisadoLink = el;
+			
+// Para se evitar o erro abaixo no comando:  ativoPesquisadoLink.click()
+//			Exception in thread "main" org.openqa.selenium.ElementClickInterceptedException: element click intercepted: Element <a href="https://arquivos.b3.com.br/apinegocios/tickercsv/ADHM3/2020-09-17">...</a> is not clickable at point (135, 490). Other element would receive the click: <div class="modal fade show" role="dialog" tabindex="-1" style="display: block;">...</div>
+
+			try {
+			js.executeScript("arguments[0].click()", ativoPesquisadoLink);
+			} catch (StaleElementReferenceException e0) {
+				System.out.println("Sem processamento até o momento (StaleElementReferenceException js.executeScript) : " + code + " " + Duration.between(previousCode,Instant.now()).getSeconds() + " seconds" );
+				continue;				
+			}
+
 			System.out.println("Code : " + code + " - " + Duration.between(previousCode,Instant.now()).toSeconds() + "." + Duration.between(previousCode,Instant.now()).toNanosPart());
 		}
 		
@@ -243,9 +266,6 @@ public class CotacoesPage extends BasePage {
 	public static void main (String[] args) {
 		
 		Instant start = Instant.now();
-		
-		CotacoesPage cot = new CotacoesPage();
-		cot.initialization("CHROME", "http://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/cotacoes/cotacoes");
 		List<String> codes = Arrays.asList(
 //				"ADHM3",
 //				"TIET11",
@@ -1072,35 +1092,160 @@ public class CotacoesPage extends BasePage {
 				"WHRL3",
 				"WHRL4",
 				"WIZS3",
-				"WLMM3",
-				"WLMM4",
+				"WLMM3", 
+				"WLMM4", 
 				"YDUQ3"
 				);
-		cot.downloadNegociosByStockUntilNow(codes, "15/09/2020");
-		cot.unzipFolder();
-		cot.preparaLoad();
+		
+		CotacoesPage cot = new CotacoesPage( codes, "20200917");
+		cot.initialization("CHROME","http://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/cotacoes/cotacoes");
+		 
+		cot.downloadNegociosByStockUntilNow(); cot.unzipFolder(); cot.preparaLoad();
 		
 		Connection conn = Util.getMySqlConnection();
-		
-		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+		 
+		System.out.println("Elapsed time: " + Duration.between(start,
+		Instant.now()).getSeconds()/60 + "m" + Duration.between(start,
+		Instant.now()).getSeconds()%60 + "s");
 		
 		Util.truncateMySql("tb_intraday_trade_daily", conn);
 		
 		for(String f : cot.listaDir()) {
 			Util.LoadDataInFileMySql(f, conn);
-			System.out.println(f);
-		}
-		try {
-			conn.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		    System.out.println(f); 
+		 } 
 		
-		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
-
-		cot.findOportunity(codes, "20200915", 15);
+		 try {
+			 conn.close(); 
+		 } catch (SQLException e) {
+			 	e.printStackTrace();
+		  }
 		
+		System.out.println("Elapsed time: " + Duration.between(start,Instant.now()).getSeconds()/60 + "m" + Duration.between(start,Instant.now()).getSeconds()%60 + "s");
+		
+		// 10:00:00
+		start = Instant.now();
+		cot.findOportunity(20);
 		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
-
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		// 11:00:00
+//		
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		// 12:00:00
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//		
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		// 13:00:00
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		// 14:00:00
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		// 15:00:00
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		// 16:00:00
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		// 17:00:00
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		// 18:00:00
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
+//
+//		start = Instant.now();
+//		cot.findOportunity(20);
+//		System.out.println("Elapsed time: " + Duration.between(start, Instant.now()).getSeconds()/60 + "m" + Duration.between(start, Instant.now()).getSeconds()%60 + "s");
 	}
 }

@@ -14,7 +14,8 @@ public class CotacoesPageTest {
 	
 	@BeforeMethod
 	public void setup() {
-		cotacoesPage = new CotacoesPage();
+		List<String> codes = Arrays.asList("MGLU3");
+		cotacoesPage = new CotacoesPage(codes, "20200409");
 		cotacoesPage.initialization("CHROME", "http://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/cotacoes/cotacoes/");
 	}
 	
@@ -25,8 +26,7 @@ public class CotacoesPageTest {
 	
 	@Test(priority = 2)
 	public void downloadTest() {
-		List<String> codes = Arrays.asList("MGLU3");
-		cotacoesPage.downloadNegociosByStockUntilNow(codes, "04/09/2020");
+		cotacoesPage.downloadNegociosByStockUntilNow();
 		Assert.assertTrue(true);
 	}
 	

@@ -30,7 +30,7 @@ public class NotFoundLink extends BasePage {
 		driver.switchTo().defaultContent(); 
 		driver.switchTo().frame("bvmf_iframe");
 		
-		driver.manage().timeouts().implicitlyWait(20, TimeUnit.SECONDS);
+		driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
 		
 		WebElement dataEl = driver.findElement(By.xpath("//div[@class='DayPickerInput']/input"));
 		dataEl.sendKeys(Keys.CONTROL + "a");
@@ -54,19 +54,20 @@ public class NotFoundLink extends BasePage {
 			stockCodeEl.sendKeys(code);
 			stockCodeEl.sendKeys(Keys.ENTER);
 
-			WebDriverWait wait0 = new WebDriverWait(driver, 120);
+			WebDriverWait wait0 = new WebDriverWait(driver, 4);
 
 			wait0.ignoring(StaleElementReferenceException.class)
 			.until(ExpectedConditions.elementToBeClickable(By.xpath("//input[@type='submit' and @class='button expand']")));
 			pesquisarBtn = driver.findElement(By.xpath("//input[@type='submit' and @class='button expand']"));
 			js.executeScript("arguments[0].click()", pesquisarBtn);
 
-			try {
-				Thread.sleep(1800);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			WebDriverWait wait = new WebDriverWait(driver, 120);
+			
+//			try {
+//				Thread.sleep(1800);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+			WebDriverWait wait = new WebDriverWait(driver, 4);
 
 			WebElement el1 = wait.ignoring(StaleElementReferenceException.class)
 			.until(ExpectedConditions.presenceOfElementLocated(By.xpath("(//a[contains(text(),'Ativo pesquisado')] | //h3[@id='label-nao-encontrado'])[last()]")));
@@ -1571,6 +1572,6 @@ public class NotFoundLink extends BasePage {
 				);
 //====================================================
 
-		cot.downloadNegociosByStockUntilNow(codes, "11/09/2020");
+		cot.downloadNegociosByStockUntilNow(codes, "17/09/2020");
 	}
 }

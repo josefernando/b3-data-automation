@@ -43,8 +43,6 @@ public class BasePage {
 	
 	public void initialization(String browserName, String url) {
 		
-
-		
 		if(browserName.equalsIgnoreCase("CHROME")) {
 			ChromeOptions options = new ChromeOptions();
 			

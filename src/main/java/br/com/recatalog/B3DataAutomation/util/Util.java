@@ -111,7 +111,11 @@ public class Util {
 		try {
 			Statement statement = conn.createStatement();
 		    String sqlCommand = " TRUNCATE " + tableName ;
+		    
+		    String sqlCommit = "  commit";
 			statement.executeUpdate( sqlCommand );
+			statement.executeUpdate( sqlCommit );
+
 			System.out.println("Truncated table: " + tableName);
 		} catch (SQLException e) {
 			e.printStackTrace();
