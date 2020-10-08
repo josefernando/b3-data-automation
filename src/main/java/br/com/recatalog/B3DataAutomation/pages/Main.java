@@ -1,12 +1,14 @@
 package br.com.recatalog.B3DataAutomation.pages;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
@@ -94,7 +96,7 @@ public class Main {
 		return stockCodes;
 	}
 	
-	
+/*	
 	public static void main(String args[]) {
 
 		Instant start, previous, current;
@@ -124,5 +126,16 @@ public class Main {
 		
 //		m.empresasListadasResultListPage.driver.close();
 //		m.empresasListadasResultListPage.driver.quit();
+	}
+	
+*/
+	public static void main (String[] args) {
+		Instant previous = Instant.now();
+
+		CotacoesPage cot = new CotacoesPage("20200925", 30);
+		cot.dailyMain();
+
+		System.err.println("Finished historic processing: " + Date.from(Instant.now()));
+		System.err.println("Elapsed time preparaLoadHistorico: " + Duration.between(previous, Instant.now()).getSeconds()/3600 + "h" + Duration.between(previous, Instant.now()).getSeconds()%3600/60 + "m" + Duration.between(previous, Instant.now()).getSeconds()%3600%60 + "s");
 	}
 }

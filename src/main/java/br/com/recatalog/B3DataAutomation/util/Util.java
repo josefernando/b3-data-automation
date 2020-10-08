@@ -64,7 +64,7 @@ public class Util {
 		
 		try {
 			conn = DriverManager.getConnection(url , user , password);
-			System.out.println("Connection is Successful to database: " + url);
+			System.out.println("Successful connection to database: " + url);
 			
 			} catch (SQLException e) {
 			e.printStackTrace();
@@ -72,7 +72,7 @@ public class Util {
 		return conn;
 	}
 	
-	public static Connection LoadDataInFileMySql(String filePathIn, Connection conn) {
+	public static Connection LoadDataInFileMySql(String filePathIn, String tableToLoad, Connection conn) {
 //		String url = "jdbc:mysql://localhost:3306/b3?useTimezone=true&serverTimezone=America/Sao_Paulo";
 //		String user = "root";
 //		String password = "root";
@@ -91,7 +91,7 @@ public class Util {
 //			String filePathIn = "C:/Download/Bolsa_de_Valores_Dados/b3_dados/intraday/20200912_091831/TradeIntraday_TIET11_20200910_1.LOAD";
 			
 		    String loadCommand = "LOAD DATA INFILE '" + filePathIn + "' "
-		    		               + " INTO TABLE tb_intraday_trade_daily FIELDS TERMINATED BY ';' LINES TERMINATED BY '\r\n' IGNORE 1 lines "
+		    		               + " INTO TABLE " + tableToLoad + " FIELDS TERMINATED BY ';' LINES TERMINATED BY '\r\n' IGNORE 1 lines "
 		    		               + " (  data_referencia , codigo_negociacao_papel , acao , preco_negocio , titulos_negociados , hora_negocio , id_negocio , tipo_sessao_pregao , data_pregao ) ";
 			
 			int insertedLines = statement.executeUpdate( loadCommand );
