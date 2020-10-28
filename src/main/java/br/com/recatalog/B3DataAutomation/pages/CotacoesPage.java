@@ -26,6 +26,8 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -51,6 +53,8 @@ public class CotacoesPage extends BasePage {
 	List<String> stockCodes;
 	List<String> retryStockCodes;
 	Set<String> historicoStockCodes;
+	Set<String> selectedHistoricoStockCodes;
+
 	
 //	Date nextStartTime;
 //	Date nextEndTime;
@@ -63,6 +67,7 @@ public class CotacoesPage extends BasePage {
 		super();
 		this.dateIn = dateIn;
 		this.retryStockCodes = new ArrayList<String>();
+		this.stockCodes = new ArrayList<String>();
 		this.historicoStockCodes = new HashSet<String>();
 		this.intradayHistoricoPaths = new ArrayList<String>();
 		this.interval = interval;
@@ -73,6 +78,7 @@ public class CotacoesPage extends BasePage {
 		this.dateIn = dateIn;
 		this.retryStockCodes = new ArrayList<String>();
 		this.historicoStockCodes = new HashSet<String>();
+		this.stockCodes = new ArrayList<String>();
 		this.intradayHistoricoPaths = new ArrayList<String>();
 		this.interval = 20;
 	}
@@ -112,21 +118,67 @@ public class CotacoesPage extends BasePage {
 	}
 	
 	public List<String> listaDir() {
+		
+		deleteDuplicatedFiles(downloadDir);
+		
         PowerShell powerShell = PowerShell.openSession();
 		String command = "Get-ChildItem '" + downloadDir + "' -Filter *.LOAD | select -expand fullname";
 //		String command = "Get-ChildItem '" + "C:\\Download\\Bolsa_de_Valores_Dados\\b3_dados\\intraday\\20200917_084611" + "' -Filter *.LOAD | select -expand fullname";
         	
+//		System.out.println("DEBUG + downloaddir: " + downloadDir);
+		
         PowerShellResponse response = powerShell.executeCommand(command);
         String outpp = response.getCommandOutput();
         
-        String[] files = outpp.split(System.getProperty("line.separator"));
+        String[] files = new String[0];
         
-//        for(String a : files) {
-//        	System.out.println(a);
-//        }
+        if(outpp.length() > 0) { // Existe algum arquivo?
+        	files = outpp.split(System.getProperty("line.separator"));
+        }
         
         powerShell.close();
         return Arrays.asList(files);
+	}
+	
+	private void deleteDuplicatedFiles(String dir ) {
+        PowerShell powerShell = PowerShell.openSession();
+//		String command = "Get-ChildItem '" + "C:\\Download\\Bolsa_de_Valores_Dados\\b3_dados\\intraday\\20201019_135912" + "' -Filter *.LOAD | select -expand fullname";
+		
+//        String dir = "C:\\Download\\Bolsa_de_Valores_Dados\\b3_dados\\intraday\\20201009_171637";
+        
+        String command0 = 
+        		"Set-Location " + dir ;
+       PowerShellResponse response0 = powerShell.executeCommand(command0);
+        String outpp0 = response0.getCommandOutput();  
+//        System.out.println(outpp0); 
+        
+        String command1 = 
+        		"$(Get-ChildItem -Filter *.LOAD | Select-Object name | Out-String  | Select-String  '(?smi)^(TradeIntraday(_[^_]*_\\d+_)).*$\\n(?=\\1)' -AllMatches |  %{ $_.Matches } " 
+        		+ " | %{ $_.Groups[0] } | %{ $_.Value }).Split(@(\"`r`n\", \"`r\", \"`n\"),[StringSplitOptions]::None) | Foreach {$_ -replace '[^a-zA-Z0-9._]',''}" ;
+       PowerShellResponse response1 = powerShell.executeCommand(command1);
+        String outpp1 = response1.getCommandOutput();
+        System.out.println("Arquivos de Pregão duplicados");
+        System.out.println("-----------------------------");        
+        System.out.println(outpp1);        
+
+        String command2 = 
+        		"$(Get-ChildItem -Filter *.LOAD | Select-Object name | Out-String  | Select-String  '(?smi)^(TradeIntraday(_[^_]*_\\d+_)).*$\\n(?=\\1)' -AllMatches |  %{ $_.Matches } " 
+        		+ " | %{ $_.Groups[0] } | %{ $_.Value }).Split(@(\"`r`n\", \"`r\", \"`n\"),[StringSplitOptions]::None) | Foreach {$_ -replace '[^a-zA-Z0-9._]',''} | where {$_ -match \".+\"} | Foreach {Remove-item $_ -Force -Recurse}" ;
+       PowerShellResponse response2 = powerShell.executeCommand(command2);
+       response2.getCommandOutput();  
+//        System.out.println(outpp1); 
+        
+		powerShell.close();
+//===============================  syntax completa =========================================		
+//		$loads = Get-ChildItem -Filter *.LOAD | Select-Object name | Out-String  | Select-String  '(?smi)^(TradeIntraday(_[^_]*_\d+_)).*$\n(?=\1)' -AllMatches |  %{ $_.Matches } |
+//				%{ $_.Groups[0] } |   
+//				%{ $_.Value }
+//					
+//				$lines = $loads.Split(
+//				@("`r`n", "`r", "`n"), 
+//				[StringSplitOptions]::None)
+//
+//				$lines | Foreach {$_ -replace "`r`n",''} | foreach { Remove-Item $_ -Force }
 	}
 	
 	public List<String> concatFiles(String folder) {
@@ -171,8 +223,12 @@ public class CotacoesPage extends BasePage {
         
 //        get-childItem '{downloadDir}' -include *.zip | foreach ($_) {remove-item $_.fullname}
 
-        System.out.println("Proceses are:" + response.getCommandOutput());
-
+        System.out.println("Processes are:" + response.getCommandOutput());
+        try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
         powerShell.close();
 	}
 	
@@ -216,7 +272,6 @@ public class CotacoesPage extends BasePage {
 		}
 	}
 
-
 	private void preparaLoadDaily() {
 		String[] start_end = getProcessInterval(interval);
 		
@@ -224,6 +279,7 @@ public class CotacoesPage extends BasePage {
 			if(!f.getPath().endsWith("txt")) continue;
 		
 		try {
+			
 		File file = f; 
 		
 		Path path = Paths.get(f.getCanonicalPath().replace("txt", "LOAD"));
@@ -240,7 +296,7 @@ public class CotacoesPage extends BasePage {
 			line = sc.nextLine();
 			count++;
 			pp = new PreparaLoadIntradayTrade(line);
-			if(doProcess(pp,start_end) == false) continue;
+//			if(doProcess(pp,start_end) == false) continue;
 
 			writer.write(pp.toCvs() + System.getProperty("line.separator"));
 		}
@@ -259,7 +315,7 @@ public class CotacoesPage extends BasePage {
 		}
 	}
 	
-	public boolean doProcess(PreparaLoadIntradayTrade pp, String[] durationInterval) {
+	private boolean doProcess(PreparaLoadIntradayTrade pp, String[] durationInterval) {
 		Boolean ret = true;
 		Date nextStartTime = null;
 		Date nextEndTime = null;
@@ -301,7 +357,7 @@ public class CotacoesPage extends BasePage {
 	}
 	
 	
-	public boolean doProcess1(String line, String[] durationInterval) {
+	private boolean doProcess1(String line, String[] durationInterval) {
 /*------------- line --------------------------------
 2020-09-23;TF693;0;11,000;10;024059557;10;1;2020-09-23
 */		
@@ -390,7 +446,7 @@ public class CotacoesPage extends BasePage {
 			String stockCode = line.split(";")[1];
             if(doProcess1(line,start_end) == false) continue;
 
-			historicoStockCodes.add(stockCode);
+            	historicoStockCodes.add(stockCode);
 
 			writer.write(formatCvs(line) + System.getProperty("line.separator"));
 		}
@@ -570,25 +626,25 @@ public class CotacoesPage extends BasePage {
 		
 		Connection conn = Util.getMySqlConnection();
 		// (stock_code varchar(12), start_date varchar(10), pinterval int, OUT error_code int, OUT error_msg varchar(255))
-		String procedureCall = "{CALL FIND_OPORTUNITY_INTRADAY_BY_STOCK(?,?,?,?,?)}";
-
+//		String procedureCall = "{CALL FIND_OPORTUNITY_INTRADAY_BY_STOCK_MAX(?,?,?,?,?)}";
+		String procedureCall = "{CALL FIND_OPORTUNITY_INTRADAY_BY_STOCK_MAX(?,?,?,?)}";
 		
 		for(String scode : stockCodes) {
 			try {
 				CallableStatement stmt = conn.prepareCall(procedureCall);
 		         stmt.setString(1, scode);  
 		         stmt.setString(2, dateIn);  
-		         stmt.setInt(3, interval);  
-		         stmt.registerOutParameter(4, Types.INTEGER);
-		         stmt.registerOutParameter(5, Types.VARCHAR);
+//		         stmt.setInt(3, interval);  
+		         stmt.registerOutParameter(3, Types.INTEGER);
+		         stmt.registerOutParameter(4, Types.VARCHAR);
 		         
 		         //Execute stored procedure
 		         stmt.execute();
 		         
 		         // Get Out and InOut parameters
 		         System.out.println("Code: " + scode);
-		         System.out.println("Error Code: "  + stmt.getInt(4));
-		         System.out.println("Error Msg: "  + stmt.getString(5));			
+		         System.out.println("Error Code: "  + stmt.getInt(3));
+		         System.out.println("Error Msg: "  + stmt.getString(4));			
 		         System.out.println("===========================");			
 
 			} catch (SQLException e) {
@@ -625,7 +681,7 @@ public class CotacoesPage extends BasePage {
 		driver.switchTo().defaultContent(); //new
 		driver.switchTo().frame("bvmf_iframe");
 		
-		driver.manage().timeouts().implicitlyWait(7, TimeUnit.SECONDS);
+		driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
 		
 		WebElement dataEl = driver.findElement(By.xpath("//div[@class='DayPickerInput']/input"));
 		dataEl.sendKeys(Keys.CONTROL + "a");
@@ -651,7 +707,7 @@ public class CotacoesPage extends BasePage {
 			stockCodeEl.sendKeys(code);
 			stockCodeEl.sendKeys(Keys.ENTER);
 
-			WebDriverWait wait0 = new WebDriverWait(driver, 10);
+			WebDriverWait wait0 = new WebDriverWait(driver, 10); 
 
 			wait0.ignoring(StaleElementReferenceException.class)
 			.until(ExpectedConditions.elementToBeClickable(By.xpath("//input[@type='submit' and @class='button expand']")));
@@ -660,7 +716,7 @@ public class CotacoesPage extends BasePage {
 
 			js.executeScript("arguments[0].click()", pesquisarBtn);
 			
-			WebDriverWait wait = new WebDriverWait(driver, 7);
+			WebDriverWait wait = new WebDriverWait(driver, 7); 
 			
 			WebElement el = wait.ignoring(StaleElementReferenceException.class)
 					.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//h3[@id='label-nao-encontrado'] | //a[contains(text(),'Ativo pesquisado')])")));
@@ -708,7 +764,7 @@ public class CotacoesPage extends BasePage {
 		
 		
 		// Tentativa de acessar os papéis não acessados por timeout e outras exceptions
-		retryDownloadNegociosByStockUntilNow();
+//--->>		retryDownloadNegociosByStockUntilNow();
 		
 //		driver.close();
 //		driver.quit();
@@ -731,7 +787,7 @@ public class CotacoesPage extends BasePage {
 		driver.switchTo().defaultContent(); //new
 		driver.switchTo().frame("bvmf_iframe");
 		
-		driver.manage().timeouts().implicitlyWait(7, TimeUnit.SECONDS);
+		driver.manage().timeouts().implicitlyWait(17, TimeUnit.SECONDS);
 		
 		WebElement dataEl = driver.findElement(By.xpath("//div[@class='DayPickerInput']/input"));
 		dataEl.sendKeys(Keys.CONTROL + "a");
@@ -757,7 +813,7 @@ public class CotacoesPage extends BasePage {
 			stockCodeEl.sendKeys(code);
 			stockCodeEl.sendKeys(Keys.ENTER);
 
-			WebDriverWait wait0 = new WebDriverWait(driver, 10);
+			WebDriverWait wait0 = new WebDriverWait(driver, 20);
 
 			wait0.ignoring(StaleElementReferenceException.class)
 			.until(ExpectedConditions.elementToBeClickable(By.xpath("//input[@type='submit' and @class='button expand']")));
@@ -766,7 +822,7 @@ public class CotacoesPage extends BasePage {
 
 			js.executeScript("arguments[0].click()", pesquisarBtn);
 			
-			WebDriverWait wait = new WebDriverWait(driver, 7);
+			WebDriverWait wait = new WebDriverWait(driver, 17);
 			
 			WebElement el = wait.ignoring(StaleElementReferenceException.class)
 					.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//h3[@id='label-nao-encontrado'] | //a[contains(text(),'Ativo pesquisado')])")));
@@ -808,16 +864,25 @@ public class CotacoesPage extends BasePage {
 		}
 	}
 	
-	public void dailyMain() {
+	public void dailyMainAll() {
+		dailyMain();
+	}
+	
+	public void dailyMainByStock(List<String> stocks) {
+		dailyMain(stocks);
+	}
+	
+	
+	private void dailyMain(List<String> ...selectedCodes) {
 		Instant start = Instant.now();
-		List<String> codes = Arrays.asList(
-//				"AALR3",
-//				"AALR3F",
-//				"ABCB4",
-//				"ABCB4F",
-//				"ABCP11",
-//				"ABEV3",
-//				"ABEV3F",
+		List<String> allCodes = Arrays.asList(
+				"AALR3",
+				"AALR3F",
+				"ABCB4",
+				"ABCB4F",
+				"ABCP11",
+				"ABEV3",
+				"ABEV3F",
 //				"AFLT3F",
 //				"AGRO3",
 //				"AGRO3F",
@@ -850,15 +915,15 @@ public class CotacoesPage extends BasePage {
 //				"AZEV4F",
 //				"AZUL4",
 //				"AZUL4F",
-				"B3SA3",
+//				"B3SA3",
 //				"BARI11",
 //				"BAZA3F",
 //				"BBAS3",
 //				"BBAS3F",
 //				"BBDC3",
 //				"BBDC3F",
-				"BBDC4",
-				"BBDC4F",
+//				"BBDC4",
+//				"BBDC4F",
 //				"BBPO11",
 //				"BBRC11",
 //				"BBRK3",
@@ -869,8 +934,8 @@ public class CotacoesPage extends BasePage {
 //				"BCIA11",
 //				"BCRI11",
 //				"BEEF11",
-				"BEEF3",
-				"BEEF3F",
+//				"BEEF3",
+//				"BEEF3F",
 //				"BEES3",
 //				"BEES3F",
 //				"BEES4F",
@@ -889,7 +954,7 @@ public class CotacoesPage extends BasePage {
 //				"BNBR3F",
 //				"BOBR4",
 //				"BOBR4F",
-				"BOVA11",
+//				"BOVA11",
 //				"BOVV11",
 //				"BPAC11",
 //				"BPAC5",
@@ -905,10 +970,10 @@ public class CotacoesPage extends BasePage {
 //				"BRDT3F",
 //				"BRFS3",
 //				"BRFS3F",
-				"BRKM3",
-				"BRKM3F",
-				"BRKM5",
-				"BRKM5F",
+//				"BRKM3",
+//				"BRKM3F",
+//				"BRKM5",
+//				"BRKM5F",
 //				"BRML3",
 //				"BRML3F",
 //				"BRPR3",
@@ -920,8 +985,8 @@ public class CotacoesPage extends BasePage {
 //				"BSEV3",
 //				"BSEV3F",
 //				"BTLG11",
-				"BTOW3",
-				"BTOW3F",
+//				"BTOW3",
+//				"BTOW3F",
 //				"BTTL3",
 //				"BTTL3F",
 //				"CAMB3",
@@ -1144,8 +1209,8 @@ public class CotacoesPage extends BasePage {
 //				"KNRI11",
 //				"LAME3",
 //				"LAME3F",
-				"LAME4",
-				"LAME4F",
+//				"LAME4",
+//				"LAME4F",
 //				"LCAM3",
 //				"LCAM3F",
 //				"LEVE3",
@@ -1183,8 +1248,8 @@ public class CotacoesPage extends BasePage {
 //				"MFII11",
 //				"MGEL4",
 //				"MGFF11",
-				"MGLU3",
-				"MGLU3F",
+//				"MGLU3",
+//				"MGLU3F",
 //				"MILS3",
 //				"MILS3F",
 //				"MMXM11",
@@ -1218,8 +1283,8 @@ public class CotacoesPage extends BasePage {
 //				"OFSA3F",
 //				"OIBR3",
 //				"OIBR3F",
-				"OIBR4",
-				"OIBR4F",
+//				"OIBR4",
+//				"OIBR4F",
 //				"OMGE3",
 //				"OMGE3F",
 //				"OUFF11",
@@ -1446,8 +1511,8 @@ public class CotacoesPage extends BasePage {
 //				"VTLT11",
 //				"VULC3",
 //				"VULC3F",
-				"VVAR3",
-				"VVAR3F",
+//				"VVAR3",
+//				"VVAR3F",
 //				"WEGE3",
 //				"WEGE3F",
 //				"WHRL4",
@@ -1463,9 +1528,10 @@ public class CotacoesPage extends BasePage {
 //				"XPML11",
 //				"XPPR11",
 //				"XPSF11",
-//				"XTED11",
-				"YDUQ3",
-				"YDUQ3F"
+				"XTED11",
+				"YDUQ3"
+//				"YDUQ3F"
+
 // ===================================================================				
 //				"AALR3",
 //				"ABCB4",
@@ -1718,7 +1784,22 @@ public class CotacoesPage extends BasePage {
 //				"WLMM4",
 //				"YDUQ3"				
 				);
-				
+		
+		List<String> codes = allCodes;
+		
+// atualiza codes com os códigos do parâmetro, se houver		
+		if(selectedCodes.length > 0) {
+			List<String> list = selectedCodes[0];
+//			codes = list.stream().filter(code -> allCodes.contains(code)).collect(Collectors.toList());
+			codes = list;
+			System.out.println(codes);
+		}
+
+		if(codes.size() == 0) {
+			System.err.println("Lista de códigos B3 vazia!");
+			return;
+		}
+		
 		setStockCodes(codes);
 		
 		initialization("CHROME","http://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/cotacoes/cotacoes");
@@ -1738,6 +1819,7 @@ public class CotacoesPage extends BasePage {
 		Util.truncateMySql("tb_intraday_trade_daily", conn);
 		
 		for(String f : listaDir()) {
+			System.out.println("DEBUG: " + f );
 			Util.LoadDataInFileMySql(f, "tb_intraday_trade_daily" ,conn);
 		    System.out.println(f); 
 		 } 
@@ -1803,22 +1885,45 @@ public class CotacoesPage extends BasePage {
 	}
 	
 	static public void execHistorico(String data, int interval) {
-		CotacoesPage cot = new CotacoesPage(data, interval);
+		CotacoesPage cot;
+
+			cot = new CotacoesPage(data, interval);
+
 		for(int i = 0 ; i < 34; i++ ) {
 			cot.historicMain();
 		}
 	}
 
 	public static void main (String[] args) {
-//		CotacoesPage cot = new CotacoesPage("20200925", 30);
-//		cot.dailyMain();
+		
+//---- PROCESSA ONLINE DURANTE O PREGÃO 
+//---------------------------------------		
+		Instant previous = Instant.now();
+		CotacoesPage cot = new CotacoesPage("20201028", 30);
+		cot.dailyMainAll();                      // processa todas as stocks
+		
+//		cot.dailyMainByStock(List.of( "BBRK3",
+//				"MEAL3",
+//				"ETER3",
+//				"JBSS3",
+//				"LOGN3",
+//				"HETA4F",
+//				"CRIV3",
+//				"GSHP3"));  // processa stock específica em 15/10/2020
+		
+		System.err.println("Starting daily processing: " + Date.from(previous));
+		System.err.println("Finished daily processing: " + Date.from(Instant.now()));
+		System.err.println("Elapsed time daily: " + Duration.between(previous, Instant.now()).getSeconds()/3600 + "h" + Duration.between(previous, Instant.now()).getSeconds()%3600/60 + "m" + Duration.between(previous, Instant.now()).getSeconds()%3600%60 + "s");
+
+/*
+//---- PROCESSA HISTÓRICO DOS PREGÕES B3
+//-----------------------------------------    
 		Instant previous = Instant.now();
 		System.err.println("Starting historic processing: " + Date.from(previous));
-		execHistorico("20200817", 15);	
+		execHistorico("20201027", 15);	
 		System.err.println("Finished historic processing: " + Date.from(Instant.now()));
 		System.err.println("Elapsed time preparaLoadHistorico: " + Duration.between(previous, Instant.now()).getSeconds()/3600 + "h" + Duration.between(previous, Instant.now()).getSeconds()%3600/60 + "m" + Duration.between(previous, Instant.now()).getSeconds()%3600%60 + "s");
-
-//		execHistorico("20200917", 15);	
-//		execHistorico("20200916", 15);	
+	*/
 	}
+
 }

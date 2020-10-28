@@ -1,12 +1,16 @@
 package br.com.recatalog.B3DataAutomation.pages;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+
+import com.profesorfalken.jpowershell.PowerShell;
+import com.profesorfalken.jpowershell.PowerShellResponse;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -129,13 +133,53 @@ public class Main {
 	}
 	
 */
+	
+	/*
 	public static void main (String[] args) {
 		Instant previous = Instant.now();
 
 		CotacoesPage cot = new CotacoesPage("20200925", 30);
-		cot.dailyMain();
+		cot.dailyMainAll();
 
 		System.err.println("Finished historic processing: " + Date.from(Instant.now()));
 		System.err.println("Elapsed time preparaLoadHistorico: " + Duration.between(previous, Instant.now()).getSeconds()/3600 + "h" + Duration.between(previous, Instant.now()).getSeconds()%3600/60 + "m" + Duration.between(previous, Instant.now()).getSeconds()%3600%60 + "s");
+	}
+	*/
+	
+	public static void main (String[] args) {
+        PowerShell powerShell = PowerShell.openSession();
+//		String command = "Get-ChildItem '" + "C:\\Download\\Bolsa_de_Valores_Dados\\b3_dados\\intraday\\20201019_135912" + "' -Filter *.LOAD | select -expand fullname";
+		
+        String dir = "C:\\Download\\Bolsa_de_Valores_Dados\\b3_dados\\intraday\\20201009_171637";
+        
+        String command0 = 
+        		"Set-Location " + dir ;
+       PowerShellResponse response0 = powerShell.executeCommand(command0);
+        String outpp0 = response0.getCommandOutput();  
+        System.out.println(outpp0);        
+
+        String command1 = 
+        		"$(Get-ChildItem -Filter *.LOAD | Select-Object name | Out-String  | Select-String  '(?smi)^(TradeIntraday(_[^_]*_\\d+_)).*$\\n(?=\\1)' -AllMatches |  %{ $_.Matches } " 
+        		+ " | %{ $_.Groups[0] } | %{ $_.Value }).Split(@(\"`r`n\", \"`r\", \"`n\"),[StringSplitOptions]::None) | Foreach {$_ -replace '[^a-zA-Z0-9._]',''} | where {$_ -match \".+\"} | Foreach {Remove-item $_ -Force -Recurse}" ;
+       PowerShellResponse response1 = powerShell.executeCommand(command1);
+        String outpp1 = response1.getCommandOutput();  
+        System.out.println(outpp1); 
+        
+		powerShell.close();
+//===============================  syntax completa =========================================		
+//  tutorial YouTube - Powershell by John Savill
+//  https://www.youtube.com/watch?v=sQm4zRvvX58
+//  https://www.youtube.com/watch?v=K_LsLq5yGgk		
+//	https://www.youtube.com/watch?v=Bmsa6F69afA&t=1318s
+//		
+//		$loads = Get-ChildItem -Filter *.LOAD | Select-Object name | Out-String  | Select-String  '(?smi)^(TradeIntraday(_[^_]*_\d+_)).*$\n(?=\1)' -AllMatches |  %{ $_.Matches } |
+//				%{ $_.Groups[0] } |   
+//				%{ $_.Value }
+//					
+//				$lines = $loads.Split(
+//				@("`r`n", "`r", "`n"), 
+//				[StringSplitOptions]::None)
+//
+//				$lines | Foreach {$_ -replace "`r`n",''} | foreach { Remove-Item $_ -Force }
 	}
 }
